@@ -6,6 +6,19 @@ import random
 import textwrap
 # from sympy.ntheory import primitive_root
 
+# TODO: split xor_cipher() into xor_encrypt() and xor_decrypt()
+# TODO: create sender.py and recipient.py to properly demo the system (use colors)
+
+
+class Keystream:
+    def __init__(self, shared_key):
+        self.seed = shared_key
+
+    def __call__(self):
+        random.seed(self.seed)
+        self.seed += 1
+        return random.randint(0, 1)
+
 
 def ascii_to_bin(ascii_str):
     block_list = [bin(ord(ch))[2:] for ch in ascii_str]
@@ -21,13 +34,6 @@ def bin_to_ascii(bin_str):
 
 def DiffieHellman(p, g_pow_k, my_secret_number):
     return pow(g_pow_k, my_secret_number, p)
-
-
-def keystream(loc):
-    random.seed(loc[0])
-    bit = random.randint(0, 1)
-    loc[0] += 1
-    return bit
 
 
 def xor_cipher(text, key, decrypt=False):
@@ -65,19 +71,19 @@ def main():
     shared_key = DiffieHellman(p, g_pow_yours, my_secret_number)
 
     # Starting point for keystream(); must be lists so they are changed in memory across multiple runs of keystream
-    MY_LOC = [shared_key]
-    YOUR_LOC = [shared_key]
+    my_keystream = Keystream(shared_key)
+    your_keystream = Keystream(shared_key)
 
     plaintext = input('Enter a message to encrypt (ASCII only):\n')
-    ciphertext = xor_cipher(plaintext, lambda: keystream(MY_LOC))
+    ciphertext = xor_cipher(plaintext, my_keystream)
 
-    print(f'\nBinary ciphertext (encrypted with MY_LOC):\n{ciphertext}')
+    print(f'\nBinary ciphertext (encrypted with my_keystream):\n{ciphertext}')
 
     print('\n' + '_' * 100)
     input('[press ENTER to decrypt]')
 
-    decrypted_plaintext = xor_cipher(ciphertext, lambda: keystream(YOUR_LOC), decrypt=True)
-    print(f'\nDecrypted plaintext (decrypted with YOUR_LOC):\n{decrypted_plaintext}')
+    decrypted_plaintext = xor_cipher(ciphertext, your_keystream, decrypt=True)
+    print(f'\nDecrypted plaintext (decrypted with your_keystream):\n{decrypted_plaintext}')
 
     print()
     if plaintext == decrypted_plaintext:
